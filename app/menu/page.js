@@ -3,11 +3,11 @@ import MenuFilter from "@/components/MenuFilter";
 export default function MenuPage() {
   return (
     <div>
-      <section className="bg-gradient-to-r from-green-800 to-green-600 text-white py-12">
+      <section className="bg-gradient-to-r from-green-700 to-green-900 text-white py-12">
         <div className="container mx-auto px-4 text-center">
           <h1 className="text-4xl font-bold mb-2">Каталог книг</h1>
           <p className="text-lg opacity-90">
-            Знайдіть потрібну книгу за назвою або категорією
+            Оберіть книгу та перегляньте деталі
           </p>
         </div>
       </section>

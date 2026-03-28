@@ -1,32 +1,38 @@
+'use client'
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 export default function Header() {
+  const pathname = usePathname();
+
+  const linkClass = (path) =>
+    pathname === path
+      ? "text-yellow-300 font-bold"
+      : "hover:text-green-200";
+
   return (
-    <header className="bg-gradient-to-r from-green-700 to-green-900 text-white shadow-md">
-      <div className="container mx-auto px-6 py-4 flex justify-between items-center">
-        
-        <Link href="/" className="text-2xl font-bold tracking-wide hover:opacity-80 transition">
+    <header className="bg-green-800 text-white py-4">
+      <div className="container mx-auto px-4 flex justify-between items-center">
+        <Link href="/" className="font-bold text-xl">
           📚 Бібліотека
         </Link>
 
-        <nav>
-          <ul className="flex gap-8 text-lg">
-            <li>
-              <Link href="/" className="hover:text-green-300 transition">
-                Головна
-              </Link>
-            </li>
-            <li>
-              <Link href="/menu" className="hover:text-green-300 transition">
-                Каталог
-              </Link>
-            </li>
-            <li>
-              <Link href="/about" className="hover:text-green-300 transition">
-                Про нас
-              </Link>
-            </li>
-          </ul>
+        <nav className="flex gap-6">
+          <Link href="/" className={linkClass("/")}>
+            Головна
+          </Link>
+          <Link href="/menu" className={linkClass("/menu")}>
+            Каталог
+          </Link>
+          <Link href="/about" className={linkClass("/about")}>
+            Про нас
+          </Link>
+          <Link href="/contact" className={linkClass("/contact")}>
+            Контакти
+          </Link>
+          <Link href="/dashboard" className={linkClass("/dashboard")}>
+            Dashboard
+          </Link>
         </nav>
       </div>
     </header>

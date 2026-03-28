@@ -14,14 +14,19 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "Система управління бібліотекою",
-  description: "Облік книг, читачів та пошук літератури",
+  title: {
+    default: "Бібліотека",
+    template: "%s | Бібліотека",
+  },
+  description: "Система управління бібліотекою",
 };
 
 export default function RootLayout({ children }) {
   return (
     <html lang="uk">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased flex flex-col min-h-screen`}>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased flex flex-col min-h-screen`}
+      >
         <Header />
         <main className="flex-1">{children}</main>
         <Footer />
