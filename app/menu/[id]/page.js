@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getBookById } from "@/lib/books";
+import FavoriteButton from "@/components/FavoriteButton";
 
 export default async function BookPage({ params }) {
   const { id } = await params;
@@ -21,7 +22,10 @@ export default async function BookPage({ params }) {
           <div className="mt-6 flex items-center gap-6">
             <span className="text-7xl">{book.emoji}</span>
             <div>
-              <h1 className="text-4xl font-bold">{book.name}</h1>
+              <div className="flex items-center gap-3">
+                <h1 className="text-4xl font-bold">{book.name}</h1>
+                <FavoriteButton drinkId={book.id} />
+              </div>
               <p className="text-green-200 text-lg mt-2">{book.category}</p>
             </div>
           </div>
@@ -31,31 +35,9 @@ export default async function BookPage({ params }) {
       <section className="py-12 bg-gray-50">
         <div className="container mx-auto px-4">
           <div className="bg-white rounded-xl shadow-md p-8 max-w-3xl mx-auto">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-              <div>
-                <h3 className="text-sm font-bold text-gray-500 mb-2">Ціна</h3>
-                <p className="text-2xl font-bold text-green-700">{book.price} грн</p>
-              </div>
-
-              <div>
-                <h3 className="text-sm font-bold text-gray-500 mb-2">Наявність</h3>
-                {book.available ? (
-                  <span className="text-green-600 font-semibold">В наявності</span>
-                ) : (
-                  <span className="text-red-600 font-semibold">Тимчасово немає</span>
-                )}
-              </div>
-            </div>
-
-            <div className="mb-6">
-              <h3 className="text-sm font-bold text-gray-500 mb-2">Опис</h3>
-              <p className="text-gray-700 leading-relaxed">{book.description}</p>
-            </div>
-
-            <div>
-              <h3 className="text-sm font-bold text-gray-500 mb-2">Категорія</h3>
-              <p className="text-gray-700">{book.category}</p>
-            </div>
+            <p className="text-gray-700 mb-4">{book.description}</p>
+            <p className="text-green-700 font-bold text-2xl mb-2">{book.price} грн</p>
+            <p className="text-gray-600">{book.available ? "В наявності" : "Немає"}</p>
           </div>
         </div>
       </section>

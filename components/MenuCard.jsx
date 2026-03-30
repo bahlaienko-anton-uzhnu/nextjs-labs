@@ -1,4 +1,5 @@
 import Link from "next/link";
+import FavoriteButton from "./FavoriteButton";
 
 export default function MenuCard({
   id,
@@ -10,37 +11,33 @@ export default function MenuCard({
   available = true,
 }) {
   return (
-    <div className={`bg-white rounded-xl shadow-md p-5 transition ${
-      !available ? "opacity-50" : ""
-    }`}>
-      
-      <div className="text-5xl text-center mb-3">{emoji}</div>
+    <div className="bg-white rounded-lg shadow-md p-4">
+      <div className="text-4xl text-center mb-2">{emoji}</div>
 
-      {/* 🔥 ВАЖЛИВО */}
-      <h3 className="text-xl font-bold text-black mb-1">
-        {name}
-      </h3>
+      <div className="flex justify-between items-start mb-2">
+        <h3 className="text-xl font-bold text-black">{name}</h3>
 
-      <p className="text-gray-700 text-sm mb-2">
-        {description}
-      </p>
+        <div className="flex items-center gap-2">
+          {id && <FavoriteButton drinkId={id} />}
+          <span
+            className={`text-xs px-2 py-1 rounded ${
+              available
+                ? "bg-green-100 text-green-700"
+                : "bg-red-100 text-red-700"
+            }`}
+          >
+            {available ? "В наявності" : "Немає"}
+          </span>
+        </div>
+      </div>
 
-      <p className="text-green-700 font-bold text-lg">
-        {price} грн
-      </p>
+      <p className="text-gray-700 mb-2">{description}</p>
+      <p className="text-green-700 font-bold">{price} грн</p>
+      <p className="text-sm text-gray-500 mb-3">{category}</p>
 
-      <p className="text-gray-500 text-sm mb-3">
-        {category}
-      </p>
-
-      {id && (
-        <Link
-          href={`/menu/${id}`}
-          className="text-green-700 font-semibold hover:underline"
-        >
-          Детальніше →
-        </Link>
-      )}
+      <Link href={`/menu/${id}`} className="text-green-700 underline">
+        Детальніше →
+      </Link>
     </div>
   );
 }
