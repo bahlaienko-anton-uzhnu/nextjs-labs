@@ -1,13 +1,17 @@
 'use client'
 
-import { useState, useEffect, use } from 'react'
+import { useState, useEffect } from 'react'
+import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 
-export default function BookDetailPage({ params }) {
-  const { id } = use(params)
+export default function BookDetailPage() {
+  const { id } = useParams()
+  const router = useRouter()
+
   const [book, setBook] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
     async function fetchBook() {
@@ -15,10 +19,7 @@ export default function BookDetailPage({ params }) {
         const response = await fetch(`/api/books/${id}`)
 
         if (!response.ok) {
-          if (response.status === 404) {
-            throw new Error('Книгу не знайдено')
-          }
-          throw new Error('Помилка завантаження')
+          throw new Error('Книгу не знайдено')
         }
 
         const data = await response.json()
@@ -33,40 +34,71 @@ export default function BookDetailPage({ params }) {
     fetchBook()
   }, [id])
 
+  async function handleDelete() {
+    const ok = confirm(`Видалити книгу "${book.name}"?`)
+    if (!ok) return
+
+    try {
+      setDeleting(true)
+
+      const response = await fetch(`/api/books/${id}`, {
+        method: 'DELETE',
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || 'Помилка видалення')
+      }
+
+      router.push('/dashboard/books')
+    } catch (err) {
+      alert(err.message)
+      setDeleting(false)
+    }
+  }
+
   if (loading) {
-    return (
-      <div className="flex justify-center items-center py-12">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-700"></div>
-      </div>
-    )
+    return <div className="text-gray-700">Завантаження...</div>
   }
 
   if (error) {
     return (
-      <div className="text-center py-12">
-        <h1 className="text-4xl font-bold text-gray-400 mb-4">404</h1>
-        <p className="text-gray-600 mb-4">{error}</p>
-        <Link href="/dashboard/books" className="text-blue-600 hover:underline">
-          ← До списку книг
+      <div>
+        <Link
+          href="/dashboard/books"
+          className="text-green-700 hover:underline mb-4 inline-block"
+        >
+          &larr; Назад до списку
         </Link>
+
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+          <h2 className="text-2xl font-bold text-red-600 mb-2">Помилка</h2>
+          <p className="text-gray-700">{error}</p>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="max-w-3xl mx-auto">
-      <Link href="/dashboard/books" className="text-blue-600 hover:underline">
-        ← Назад до списку
+    <div>
+      <Link
+        href="/dashboard/books"
+        className="text-green-700 hover:underline mb-4 inline-block"
+      >
+        &larr; Назад до списку
       </Link>
 
-      <div className="mt-4 bg-white border border-gray-200 rounded-xl p-6 shadow">
-        <div className="flex justify-between items-start mb-4">
-          <h1 className="text-2xl font-bold text-gray-900">
-            {book.emoji} {book.name}
-          </h1>
+      <div className="bg-white rounded-lg shadow p-8">
+        <div className="flex justify-between items-start mb-6">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">
+              {book.emoji} {book.name}
+            </h1>
+            <p className="text-gray-500 mt-2">ID: {book._id}</p>
+          </div>
 
           <span
-            className={`px-3 py-1 rounded text-sm ${
+            className={`px-3 py-1 rounded text-sm font-medium ${
               book.available
                 ? 'bg-green-100 text-green-700'
                 : 'bg-red-100 text-red-700'
@@ -76,21 +108,38 @@ export default function BookDetailPage({ params }) {
           </span>
         </div>
 
-        <div className="grid grid-cols-2 gap-4 mb-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           <div>
-            <p className="text-sm text-gray-500">Категорія</p>
+            <p className="text-sm text-gray-500 mb-1">Категорія</p>
             <p className="text-gray-900 font-medium">{book.category}</p>
           </div>
 
           <div>
-            <p className="text-sm text-gray-500">Ціна</p>
+            <p className="text-sm text-gray-500 mb-1">Ціна</p>
             <p className="text-gray-900 font-medium">{book.price} грн</p>
           </div>
         </div>
 
-        <div>
+        <div className="mb-8">
           <p className="text-sm text-gray-500 mb-1">Опис</p>
-          <p className="text-gray-800">{book.description}</p>
+          <p className="text-gray-800">{book.description || 'Без опису'}</p>
+        </div>
+
+        <div className="flex gap-4">
+          <Link
+            href={`/dashboard/books/${book._id}/edit`}
+            className="bg-green-700 text-white px-5 py-2 rounded hover:bg-green-800"
+          >
+            Редагувати
+          </Link>
+
+          <button
+            onClick={handleDelete}
+            disabled={deleting}
+            className="bg-red-600 text-white px-5 py-2 rounded hover:bg-red-700 disabled:opacity-50"
+          >
+            {deleting ? 'Видалення...' : 'Видалити'}
+          </button>
         </div>
       </div>
     </div>

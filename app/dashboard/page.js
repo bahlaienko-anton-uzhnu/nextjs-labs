@@ -1,12 +1,12 @@
-import StatsCard from "@/components/StatsCard";
-import { getBookStats } from "@/lib/helpers";
+import StatsCard from '@/components/StatsCard'
+import { getBookStats } from '@/lib/helpers'
 
 export const metadata = {
-  title: "Dashboard",
-};
+  title: 'Dashboard',
+}
 
-export default function DashboardPage() {
-  const stats = getBookStats();
+export default async function DashboardPage() {
+  const stats = await getBookStats()
 
   return (
     <div>
@@ -18,5 +18,5 @@ export default function DashboardPage() {
         <StatsCard title="Середня ціна" value={`${stats.avgPrice} грн`} color="blue" />
       </div>
     </div>
-  );
+  )
 }

@@ -1,8 +1,20 @@
-import { NextResponse } from 'next/server'
+import dbConnect from '@/lib/db'
 
 export async function GET() {
-  return NextResponse.json({
-    message: 'API бібліотеки працює!',
-    timestamp: new Date().toISOString()
-  })
+  try {
+    await dbConnect()
+
+    return Response.json({
+      message: 'MongoDB підключено!',
+      status: 'ok',
+    })
+  } catch (error) {
+    return Response.json(
+      {
+        message: 'Помилка підключення',
+        error: error.message,
+      },
+      { status: 500 }
+    )
+  }
 }

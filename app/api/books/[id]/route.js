@@ -1,67 +1,86 @@
-import { NextResponse } from 'next/server'
-import { getBookById, updateBook, deleteBook } from '@/lib/books'
+import dbConnect from '@/lib/db'
+import Book from '@/lib/models/Book'
 
-// GET /api/books/1
+// GET /api/books/:id
 export async function GET(request, { params }) {
-  const { id } = await params
-  const book = getBookById(id)
-
-  if (!book) {
-    return NextResponse.json(
-      { error: 'Книгу не знайдено' },
-      { status: 404 }
-    )
-  }
-
-  return NextResponse.json(book)
-}
-
-// PUT /api/books/1
-export async function PUT(request, { params }) {
+  await dbConnect()
   const { id } = await params
 
   try {
-    const body = await request.json()
+    const book = await Book.findById(id)
 
-    if (!body.name || !body.category || !body.price) {
-      return NextResponse.json(
-        { error: "Поля name, category та price є обов'язковими" },
-        { status: 400 }
-      )
-    }
-
-    const updated = updateBook(id, body)
-
-    if (!updated) {
-      return NextResponse.json(
+    if (!book) {
+      return Response.json(
         { error: 'Книгу не знайдено' },
         { status: 404 }
       )
     }
 
-    return NextResponse.json(updated)
+    return Response.json(book)
   } catch (error) {
-    return NextResponse.json(
-      { error: 'Невалідний JSON' },
+    return Response.json(
+      { error: 'Невалідний ID' },
       { status: 400 }
     )
   }
 }
 
-// DELETE /api/books/1
-export async function DELETE(request, { params }) {
+// PUT /api/books/:id
+export async function PUT(request, { params }) {
+  await dbConnect()
   const { id } = await params
-  const deleted = deleteBook(id)
 
-  if (!deleted) {
-    return NextResponse.json(
-      { error: 'Книгу не знайдено' },
-      { status: 404 }
+  try {
+    const body = await request.json()
+
+    const book = await Book.findByIdAndUpdate(id, body, {
+      new: true,
+      runValidators: true,
+    })
+
+    if (!book) {
+      return Response.json(
+        { error: 'Книгу не знайдено' },
+        { status: 404 }
+      )
+    }
+
+    return Response.json(book)
+  } catch (error) {
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map((err) => err.message)
+      return Response.json({ errors: messages }, { status: 400 })
+    }
+
+    return Response.json(
+      { error: 'Помилка сервера' },
+      { status: 500 }
     )
   }
+}
 
-  return NextResponse.json({
-    message: `Книгу "${deleted.name}" видалено`,
-    deleted
-  })
+// DELETE /api/books/:id
+export async function DELETE(request, { params }) {
+  await dbConnect()
+  const { id } = await params
+
+  try {
+    const book = await Book.findByIdAndDelete(id)
+
+    if (!book) {
+      return Response.json(
+        { error: 'Книгу не знайдено' },
+        { status: 404 }
+      )
+    }
+
+    return Response.json({
+      message: `Книгу "${book.name}" видалено`
+    })
+  } catch (error) {
+    return Response.json(
+      { error: 'Невалідний ID' },
+      { status: 400 }
+    )
+  }
 }
