@@ -1,9 +1,12 @@
-'use client'
+"use client";
+
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useSession, signOut } from "next-auth/react";
 
 export default function Header() {
   const pathname = usePathname();
+  const { data: session } = useSession();
 
   const linkClass = (path) =>
     pathname === path
@@ -17,22 +20,59 @@ export default function Header() {
           📚 Бібліотека
         </Link>
 
-        <nav className="flex gap-6">
+        <nav className="flex items-center gap-6">
           <Link href="/" className={linkClass("/")}>
             Головна
           </Link>
+
           <Link href="/menu" className={linkClass("/menu")}>
             Каталог
           </Link>
+
           <Link href="/about" className={linkClass("/about")}>
             Про нас
           </Link>
+
           <Link href="/contact" className={linkClass("/contact")}>
             Контакти
           </Link>
+
           <Link href="/dashboard" className={linkClass("/dashboard")}>
             Dashboard
           </Link>
+
+          {!session && (
+            <>
+              <Link
+                href="/login"
+                className="bg-white text-green-700 px-3 py-1 rounded-lg hover:bg-gray-200 transition"
+              >
+                Увійти
+              </Link>
+
+              <Link
+                href="/register"
+                className="bg-yellow-400 text-black px-3 py-1 rounded-lg hover:bg-yellow-300 transition"
+              >
+                Реєстрація
+              </Link>
+            </>
+          )}
+
+          {session && (
+            <>
+              <span className="text-sm text-gray-200">
+                {session.user?.email}
+              </span>
+
+              <button
+                onClick={() => signOut({ callbackUrl: "/" })}
+                className="bg-red-500 px-3 py-1 rounded-lg hover:bg-red-600 transition"
+              >
+                Вийти
+              </button>
+            </>
+          )}
         </nav>
       </div>
     </header>
