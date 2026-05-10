@@ -2,7 +2,9 @@ import dbConnect from '@/lib/db'
 import Book from '@/lib/models/Book'
 import { authorize } from '@/lib/authorize'
 
-// GET — отримати книгу по ID
+import { updateBookSchema } from '@/lib/validations/book'
+import { sanitizeObject } from '@/lib/sanitize'
+
 export async function GET(request, { params }) {
   try {
     await dbConnect()
@@ -18,7 +20,6 @@ export async function GET(request, { params }) {
     }
 
     return Response.json(book)
-
   } catch (error) {
     return Response.json(
       { error: error.message },
@@ -27,7 +28,6 @@ export async function GET(request, { params }) {
   }
 }
 
-// PUT — оновити книгу
 export async function PUT(request, { params }) {
   const { error } = await authorize("admin")
   if (error) return error
@@ -36,11 +36,23 @@ export async function PUT(request, { params }) {
     await dbConnect()
 
     const { id } = await params
-    const body = await request.json()
+    const data = await request.json()
+    const result = updateBookSchema.safeParse(data)
+
+    if (!result.success) {
+      const messages = result.error.issues.map((e) => e.message)
+
+      return Response.json(
+        { errors: messages },
+        { status: 400 }
+      )
+    }
+
+    const sanitized = sanitizeObject(result.data)
 
     const updatedBook = await Book.findByIdAndUpdate(
       id,
-      body,
+      sanitized,
       { new: true, runValidators: true }
     )
 
@@ -52,7 +64,6 @@ export async function PUT(request, { params }) {
     }
 
     return Response.json(updatedBook)
-
   } catch (error) {
     return Response.json(
       { error: error.message },
@@ -61,7 +72,6 @@ export async function PUT(request, { params }) {
   }
 }
 
-// DELETE — видалити книгу
 export async function DELETE(request, { params }) {
   const { error } = await authorize("admin")
   if (error) return error
@@ -82,7 +92,6 @@ export async function DELETE(request, { params }) {
     return Response.json({
       message: 'Книгу видалено'
     })
-
   } catch (error) {
     return Response.json(
       { error: error.message },

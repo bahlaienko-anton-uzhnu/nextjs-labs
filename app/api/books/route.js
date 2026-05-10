@@ -2,6 +2,9 @@ import dbConnect from '@/lib/db'
 import Book from '@/lib/models/Book'
 import { authorize } from '@/lib/authorize'
 
+import { createBookSchema } from '@/lib/validations/book'
+import { sanitizeObject } from '@/lib/sanitize'
+
 // GET — отримати всі книги
 export async function GET() {
   try {
@@ -27,9 +30,26 @@ export async function POST(request) {
   try {
     await dbConnect()
 
-    const body = await request.json()
+    const data = await request.json()
 
-    const newBook = await Book.create(body)
+    // zod validation
+    const result = createBookSchema.safeParse(data)
+
+    if (!result.success) {
+      const messages = result.error.errors.map(
+        (e) => e.message
+      )
+
+      return Response.json(
+        { errors: messages },
+        { status: 400 }
+      )
+    }
+
+    // sanitize
+    const sanitized = sanitizeObject(result.data)
+
+    const newBook = await Book.create(sanitized)
 
     return Response.json(newBook, { status: 201 })
 

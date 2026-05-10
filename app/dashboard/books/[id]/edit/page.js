@@ -51,7 +51,9 @@ export default function EditBookPage() {
 
       if (!response.ok) {
         const data = await response.json()
-        throw new Error(data.errors?.join(', ') || data.error || 'Помилка оновлення')
+        throw new Error(
+          data.errors?.join(', ') || data.error || 'Помилка оновлення'
+        )
       }
 
       router.push(`/dashboard/books/${id}`)
@@ -97,12 +99,17 @@ export default function EditBookPage() {
           Редагувати: {book.name}
         </h1>
 
+        {submitError && (
+          <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded mb-6">
+            {submitError}
+          </div>
+        )}
+
         <BookForm
           initialData={book}
           onSubmit={handleSubmit}
           submitLabel="Зберегти зміни"
           isSubmitting={isSubmitting}
-          error={submitError}
         />
       </div>
     </div>
