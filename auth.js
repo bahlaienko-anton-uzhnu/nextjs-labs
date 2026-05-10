@@ -9,12 +9,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   session: {
     strategy: "jwt",
   },
+
   providers: [
     Credentials({
       credentials: {
         email: {},
         password: {},
       },
+
       async authorize(credentials) {
         await dbConnect();
 
@@ -35,24 +37,32 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           id: user._id.toString(),
           name: user.name,
           email: user.email,
+          role: user.role || "user",
         };
       },
     }),
   ],
+
   pages: {
     signIn: "/login",
   },
+
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
+        token.role = user.role;
       }
+
       return token;
     },
+
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.id;
+        session.user.role = token.role || "user";
       }
+
       return session;
     },
   },

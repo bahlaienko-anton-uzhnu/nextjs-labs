@@ -1,5 +1,6 @@
 import dbConnect from '@/lib/db'
 import Book from '@/lib/models/Book'
+import { authorize } from '@/lib/authorize'
 
 // GET — отримати всі книги
 export async function GET() {
@@ -19,6 +20,10 @@ export async function GET() {
 
 // POST — створити книгу
 export async function POST(request) {
+
+  const { error } = await authorize("admin")
+  if (error) return error
+
   try {
     await dbConnect()
 
@@ -27,6 +32,7 @@ export async function POST(request) {
     const newBook = await Book.create(body)
 
     return Response.json(newBook, { status: 201 })
+
   } catch (error) {
     return Response.json(
       { error: error.message },
