@@ -1,0 +1,23 @@
+import dbConnect from '@/lib/db'
+import User from '@/lib/models/User'
+import { authorize } from '@/lib/authorize'
+
+export async function GET() {
+  const { error } = await authorize("admin")
+  if (error) return error
+
+  try {
+    await dbConnect()
+
+    const users = await User.find()
+      .select('-password')
+      .sort({ createdAt: -1 })
+
+    return Response.json(users)
+  } catch (error) {
+    return Response.json(
+      { error: error.message },
+      { status: 500 }
+    )
+  }
+}

@@ -5,7 +5,6 @@ import { authorize } from '@/lib/authorize'
 import { createBookSchema } from '@/lib/validations/book'
 import { sanitizeObject } from '@/lib/sanitize'
 
-// GET — отримати всі книги
 export async function GET() {
   try {
     await dbConnect()
@@ -21,9 +20,7 @@ export async function GET() {
   }
 }
 
-// POST — створити книгу
 export async function POST(request) {
-
   const { error } = await authorize("admin")
   if (error) return error
 
@@ -31,14 +28,10 @@ export async function POST(request) {
     await dbConnect()
 
     const data = await request.json()
-
-    // zod validation
     const result = createBookSchema.safeParse(data)
 
     if (!result.success) {
-      const messages = result.error.errors.map(
-        (e) => e.message
-      )
+      const messages = result.error.issues.map((e) => e.message)
 
       return Response.json(
         { errors: messages },
@@ -46,13 +39,10 @@ export async function POST(request) {
       )
     }
 
-    // sanitize
     const sanitized = sanitizeObject(result.data)
-
     const newBook = await Book.create(sanitized)
 
     return Response.json(newBook, { status: 201 })
-
   } catch (error) {
     return Response.json(
       { error: error.message },

@@ -1,15 +1,42 @@
 'use client'
+
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-
-const links = [
-  { href: "/dashboard", label: "Огляд" },
-  { href: "/dashboard/books", label: "Книги" },
-  { href: "/dashboard/readers", label: "Читачі" },
-];
+import { useSession } from "next-auth/react";
 
 export default function DashboardNav() {
   const pathname = usePathname();
+
+  const { data: session } = useSession();
+
+  const isAdmin =
+    session?.user?.role === "admin";
+
+  const links = [
+    {
+      href: "/dashboard",
+      label: "Огляд",
+    },
+
+    {
+      href: "/dashboard/books",
+      label: "Книги",
+    },
+
+    {
+      href: "/dashboard/orders",
+      label: "Замовлення",
+    },
+
+    ...(isAdmin
+      ? [
+          {
+            href: "/dashboard/users",
+            label: "Користувачі",
+          },
+        ]
+      : []),
+  ];
 
   return (
     <nav>
@@ -24,7 +51,7 @@ export default function DashboardNav() {
             <li key={link.href}>
               <Link
                 href={link.href}
-                className={`block px-4 py-2 rounded-lg transition ${
+                className={`block px-4 py-2 rounded transition-colors ${
                   isActive
                     ? "bg-green-700 text-white"
                     : "text-gray-300 hover:bg-gray-700"
