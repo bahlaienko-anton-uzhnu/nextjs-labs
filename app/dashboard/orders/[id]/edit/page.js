@@ -2,7 +2,13 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { toast } from 'sonner'
 import Link from 'next/link'
+
+import { updateOrderSchema } from '@/lib/validations/order'
+import FormField from '@/components/forms/FormField'
 
 const STATUSES = [
   { value: 'pending', label: 'Очікує' },
@@ -17,54 +23,70 @@ export default function EditOrderPage() {
   const params = useParams()
 
   const [order, setOrder] = useState(null)
-  const [status, setStatus] = useState('pending')
-  const [notes, setNotes] = useState('')
   const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState('')
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm({
+    resolver: zodResolver(updateOrderSchema),
+    defaultValues: {
+      status: 'pending',
+      notes: '',
+    },
+  })
 
   useEffect(() => {
     fetch(`/api/orders/${params.id}`)
       .then((res) => res.json())
       .then((data) => {
         if (data.error) {
-          setError(data.error)
+          toast.error(data.error)
           setLoading(false)
           return
         }
 
         setOrder(data)
-        setStatus(data.status)
-        setNotes(data.notes || '')
+        reset({
+          status: data.status || 'pending',
+          notes: data.notes || '',
+        })
         setLoading(false)
       })
       .catch(() => {
-        setError('Помилка завантаження')
+        toast.error('Помилка завантаження')
         setLoading(false)
       })
-  }, [params.id])
+  }, [params.id, reset])
 
-  async function handleSubmit(e) {
-    e.preventDefault()
-    setSaving(true)
-    setError('')
+  async function onSubmit(data) {
+    try {
+      const res = await fetch(`/api/orders/${params.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      })
 
-    const res = await fetch(`/api/orders/${params.id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status, notes }),
-    })
+      const body = await res.json().catch(() => ({}))
 
-    const body = await res.json().catch(() => ({}))
-    setSaving(false)
+      if (!res.ok) {
+        throw new Error(
+          body.errors?.join(', ') ||
+            body.error ||
+            'Помилка збереження'
+        )
+      }
 
-    if (!res.ok) {
-      setError(body.errors?.join(', ') || body.error || 'Помилка збереження')
-      return
+      toast.success('Замовлення оновлено')
+      router.push(`/dashboard/orders/${params.id}`)
+      router.refresh()
+    } catch (error) {
+      toast.error(error.message)
     }
-
-    router.push(`/dashboard/orders/${params.id}`)
-    router.refresh()
   }
 
   if (loading) {
@@ -74,7 +96,7 @@ export default function EditOrderPage() {
   if (!order) {
     return (
       <div className="bg-red-50 border border-red-200 text-red-700 px-6 py-4 rounded">
-        {error || 'Замовлення не знайдено'}
+        Замовлення не знайдено
       </div>
     )
   }
@@ -92,61 +114,62 @@ export default function EditOrderPage() {
         Редагування замовлення
       </h1>
 
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6">
-          {error}
-        </div>
-      )}
-
-      <form onSubmit={handleSubmit} className="bg-white p-6 rounded-lg shadow space-y-5">
+      <form
+        onSubmit={handleSubmit(onSubmit)}
+        className="bg-white p-6 rounded-lg shadow space-y-5"
+      >
         <div className="text-gray-900">
           <p>
-            Користувач: <strong>{order.user?.name}</strong>
+            Користувач:{' '}
+            <strong>{order.user?.name || '—'}</strong>
           </p>
+
           <p>
-            Сума: <strong>{order.totalPrice} грн</strong>
+            Сума:{' '}
+            <strong>{order.totalPrice} грн</strong>
           </p>
         </div>
 
-        <div>
-          <label className="block text-gray-700 font-bold mb-2">
-            Статус
-          </label>
-
+        <FormField
+          label="Статус *"
+          error={errors.status?.message}
+        >
           <select
-            value={status}
-            onChange={(e) => setStatus(e.target.value)}
+            {...register('status')}
             className="w-full px-4 py-2 border rounded text-black bg-white"
           >
-            {STATUSES.map((s) => (
-              <option key={s.value} value={s.value}>
-                {s.label}
+            {STATUSES.map((status) => (
+              <option
+                key={status.value}
+                value={status.value}
+              >
+                {status.label}
               </option>
             ))}
           </select>
-        </div>
+        </FormField>
 
-        <div>
-          <label className="block text-gray-700 font-bold mb-2">
-            Коментар
-          </label>
-
+        <FormField
+          label="Коментар"
+          error={errors.notes?.message}
+        >
           <textarea
             rows="3"
             maxLength="300"
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
+            {...register('notes')}
             className="w-full px-4 py-2 border rounded text-black bg-white"
           />
-        </div>
+        </FormField>
 
         <div className="flex gap-4">
           <button
             type="submit"
-            disabled={saving}
+            disabled={isSubmitting}
             className="bg-green-700 text-white px-6 py-3 rounded hover:bg-green-800 font-bold disabled:opacity-50"
           >
-            {saving ? 'Збереження...' : 'Зберегти'}
+            {isSubmitting
+              ? 'Збереження...'
+              : 'Зберегти'}
           </button>
 
           <Link

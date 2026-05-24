@@ -2,9 +2,18 @@
 
 import { useEffect, useState } from 'react'
 
+import RoleToggle from '@/components/RoleToggle'
+
 export default function UsersPage() {
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
+
+  // тимчасова сесія
+  const session = {
+    user: {
+      id: 'temp',
+    },
+  }
 
   useEffect(() => {
     fetch('/api/users')
@@ -17,7 +26,11 @@ export default function UsersPage() {
   }, [])
 
   if (loading) {
-    return <div className="text-gray-700">Завантаження...</div>
+    return (
+      <div className="text-gray-700">
+        Завантаження...
+      </div>
+    )
   }
 
   return (
@@ -30,18 +43,46 @@ export default function UsersPage() {
         <table className="w-full text-gray-900">
           <thead className="bg-gray-100">
             <tr>
-              <th className="px-4 py-3 text-left font-bold">Імʼя</th>
-              <th className="px-4 py-3 text-left font-bold">Email</th>
-              <th className="px-4 py-3 text-left font-bold">Роль</th>
+              <th className="px-4 py-3 text-left font-bold">
+                Імʼя
+              </th>
+
+              <th className="px-4 py-3 text-left font-bold">
+                Email
+              </th>
+
+              <th className="px-4 py-3 text-left font-bold">
+                Роль
+              </th>
             </tr>
           </thead>
 
           <tbody className="divide-y divide-gray-200">
             {users.map((user) => (
               <tr key={user._id}>
-                <td className="px-4 py-3">{user.name}</td>
-                <td className="px-4 py-3">{user.email}</td>
-                <td className="px-4 py-3">{user.role || 'user'}</td>
+                <td className="px-4 py-3">
+                  {user.name}
+                </td>
+
+                <td className="px-4 py-3">
+                  {user.email}
+                </td>
+
+                <td className="px-4 py-3">
+                  <div className="flex items-center gap-3">
+                    <span>
+                      {user.role || 'user'}
+                    </span>
+
+                    <RoleToggle
+                      userId={user._id}
+                      currentRole={user.role || 'user'}
+                      currentUserId={
+                        session.user.id
+                      }
+                    />
+                  </div>
+                </td>
               </tr>
             ))}
           </tbody>

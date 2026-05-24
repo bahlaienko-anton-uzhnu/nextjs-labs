@@ -1,67 +1,35 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import BookForm from '@/components/BookForm'
 
 export default function EditBookPage() {
   const { id } = useParams()
-  const router = useRouter()
 
   const [book, setBook] = useState(null)
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState(null)
-  const [submitError, setSubmitError] = useState(null)
-  const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
-    async function fetchBook() {
-      try {
-        const response = await fetch(`/api/books/${id}`)
-
-        if (!response.ok) {
+    fetch(`/api/books/${id}`)
+      .then((res) => {
+        if (!res.ok) {
           throw new Error('Книгу не знайдено')
         }
 
-        const data = await response.json()
-        setBook(data)
-      } catch (error) {
-        setLoadError(error.message)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchBook()
-  }, [id])
-
-  async function handleSubmit(formData) {
-    setSubmitError(null)
-    setIsSubmitting(true)
-
-    try {
-      const response = await fetch(`/api/books/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
+        return res.json()
       })
-
-      if (!response.ok) {
-        const data = await response.json()
-        throw new Error(
-          data.errors?.join(', ') || data.error || 'Помилка оновлення'
-        )
-      }
-
-      router.push(`/dashboard/books/${id}`)
-    } catch (error) {
-      setSubmitError(error.message)
-      setIsSubmitting(false)
-    }
-  }
+      .then((data) => {
+        setBook(data)
+        setLoading(false)
+      })
+      .catch((error) => {
+        setLoadError(error.message)
+        setLoading(false)
+      })
+  }, [id])
 
   if (loading) {
     return <div className="text-gray-700">Завантаження...</div>
@@ -69,18 +37,8 @@ export default function EditBookPage() {
 
   if (loadError) {
     return (
-      <div>
-        <Link
-          href="/dashboard/books"
-          className="text-green-700 hover:underline mb-4 inline-block"
-        >
-          &larr; Назад до списку
-        </Link>
-
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-          <h2 className="text-2xl font-bold text-red-600 mb-2">Помилка</h2>
-          <p className="text-gray-700">{loadError}</p>
-        </div>
+      <div className="bg-red-50 border border-red-200 text-red-700 px-6 py-4 rounded">
+        {loadError}
       </div>
     )
   }
@@ -99,17 +57,10 @@ export default function EditBookPage() {
           Редагувати: {book.name}
         </h1>
 
-        {submitError && (
-          <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded mb-6">
-            {submitError}
-          </div>
-        )}
-
         <BookForm
+          mode="edit"
+          bookId={id}
           initialData={book}
-          onSubmit={handleSubmit}
-          submitLabel="Зберегти зміни"
-          isSubmitting={isSubmitting}
         />
       </div>
     </div>

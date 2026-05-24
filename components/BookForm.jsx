@@ -1,126 +1,164 @@
 'use client'
 
-import { useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 import Link from 'next/link'
 
-const CATEGORIES = ['Фантастика', 'Класика', 'Поезія', 'Пригоди']
+import { createBookSchema } from '@/lib/validations/book'
+import FormField from '@/components/forms/FormField'
+
+const CATEGORIES = ['Фантастика', 'Роман', 'Детектив', 'Поезія', 'Інше']
 
 export default function BookForm({
+  mode = 'create',
   initialData,
-  onSubmit,
-  submitLabel = 'Зберегти',
-  isSubmitting,
-  error,
+  bookId,
 }) {
-  const [formData, setFormData] = useState({
-    name: initialData?.name || '',
-    category: initialData?.category || '',
-    price: initialData?.price || '',
-    description: initialData?.description || '',
-    emoji: initialData?.emoji || '📘',
+  const router = useRouter()
+  const isEdit = mode === 'edit'
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm({
+    resolver: zodResolver(createBookSchema),
+    defaultValues: {
+      name: initialData?.name ?? '',
+      category: initialData?.category ?? '',
+      price: initialData?.price ?? 0,
+      description: initialData?.description ?? '',
+      emoji: initialData?.emoji ?? '📘',
+      available: initialData?.available ?? true,
+    },
   })
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value })
-  }
+  async function onSubmit(data) {
+    const url = isEdit
+      ? `/api/books/${bookId}`
+      : '/api/books'
 
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    onSubmit({ ...formData, price: Number(formData.price) })
+    const method = isEdit ? 'PUT' : 'POST'
+
+    try {
+      const res = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      })
+
+      const body = await res.json().catch(() => ({}))
+
+      if (!res.ok) {
+        throw new Error(
+          body.errors?.join(', ') ||
+          body.error ||
+          'Помилка збереження'
+        )
+      }
+
+      toast.success(
+        isEdit
+          ? 'Книгу оновлено'
+          : 'Книгу додано'
+      )
+
+      router.push(
+        isEdit
+          ? `/dashboard/books/${bookId}`
+          : '/dashboard/books'
+      )
+
+      router.refresh()
+    } catch (error) {
+      toast.error(error.message)
+    }
   }
 
   return (
-    <>
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6">
-          {error}
-        </div>
-      )}
-
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label className="block text-gray-700 font-bold mb-2">Назва *</label>
-            <input
-              type="text"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              required
-              className="w-full px-4 py-2 border rounded focus:outline-none focus:border-green-500 text-black"
-            />
-          </div>
-
-          <div>
-            <label className="block text-gray-700 font-bold mb-2">Категорія *</label>
-            <select
-              name="category"
-              value={formData.category}
-              onChange={handleChange}
-              required
-              className="w-full px-4 py-2 border rounded focus:outline-none focus:border-green-500 text-black"
-            >
-              <option value="">Оберіть категорію</option>
-              {CATEGORIES.map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-gray-700 font-bold mb-2">Ціна (грн) *</label>
-            <input
-              type="number"
-              name="price"
-              value={formData.price}
-              onChange={handleChange}
-              required
-              className="w-full px-4 py-2 border rounded focus:outline-none focus:border-green-500 text-black"
-            />
-          </div>
-
-          <div>
-            <label className="block text-gray-700 font-bold mb-2">Emoji</label>
-            <input
-              type="text"
-              name="emoji"
-              value={formData.emoji}
-              onChange={handleChange}
-              className="w-full px-4 py-2 border rounded focus:outline-none focus:border-green-500 text-black"
-            />
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-gray-700 font-bold mb-2">Опис</label>
-          <textarea
-            name="description"
-            value={formData.description}
-            onChange={handleChange}
-            rows="4"
-            className="w-full px-4 py-2 border rounded focus:outline-none focus:border-green-500 text-black"
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <FormField label="Назва *" error={errors.name?.message}>
+          <input
+            type="text"
+            {...register('name')}
+            className="w-full px-4 py-2 border rounded text-black bg-white"
           />
-        </div>
+        </FormField>
 
-        <div className="flex gap-4">
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="bg-green-700 text-white px-6 py-3 rounded hover:bg-green-800 font-bold disabled:opacity-50"
+        <FormField label="Категорія *" error={errors.category?.message}>
+          <select
+            {...register('category')}
+            className="w-full px-4 py-2 border rounded text-black bg-white"
           >
-            {isSubmitting ? 'Збереження...' : submitLabel}
-          </button>
+            <option value="">Оберіть категорію</option>
+            {CATEGORIES.map((cat) => (
+              <option key={cat} value={cat}>
+                {cat}
+              </option>
+            ))}
+          </select>
+        </FormField>
 
-          <Link
-            href="/dashboard/books"
-            className="bg-gray-300 text-gray-700 px-6 py-3 rounded hover:bg-gray-400 font-bold inline-block"
-          >
-            Скасувати
-          </Link>
-        </div>
-      </form>
-    </>
+        <FormField label="Ціна (грн) *" error={errors.price?.message}>
+          <input
+            type="number"
+            step="1"
+            {...register('price', { valueAsNumber: true })}
+            className="w-full px-4 py-2 border rounded text-black bg-white"
+          />
+        </FormField>
+
+        <FormField label="Emoji" error={errors.emoji?.message}>
+          <input
+            type="text"
+            {...register('emoji')}
+            className="w-full px-4 py-2 border rounded text-black bg-white"
+          />
+        </FormField>
+      </div>
+
+      <FormField label="Опис" error={errors.description?.message}>
+        <textarea
+          rows="4"
+          {...register('description')}
+          className="w-full px-4 py-2 border rounded text-black bg-white"
+        />
+      </FormField>
+
+      <label className="inline-flex items-center gap-2 text-gray-700">
+        <input
+          type="checkbox"
+          {...register('available')}
+          className="w-4 h-4"
+        />
+        В наявності
+      </label>
+
+      <div className="flex gap-4">
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className="bg-green-700 text-white px-6 py-3 rounded hover:bg-green-800 font-bold disabled:opacity-50"
+        >
+          {isSubmitting
+            ? 'Збереження...'
+            : isEdit
+              ? 'Зберегти зміни'
+              : 'Створити'}
+        </button>
+
+        <Link
+          href={isEdit ? `/dashboard/books/${bookId}` : '/dashboard/books'}
+          className="bg-gray-300 text-gray-700 px-6 py-3 rounded hover:bg-gray-400 font-bold inline-block"
+        >
+          Скасувати
+        </Link>
+      </div>
+    </form>
   )
 }
